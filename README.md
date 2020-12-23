@@ -1,4 +1,4 @@
-# Composite Error
+# Compound Error
 
 This crates allows you to define errors that are convenient to write, convenient to use, flexible and extensible. To make this work, a compositing approach was followed to be able to define complex errors on the base of primitive ones.
 
@@ -93,32 +93,32 @@ impl From<ReadError> for OpenOrCreateError {
 }
 ```
 
-This is a better approach as the `PermissionDenied` error is now only encoded in one way. However, when errors get more complex, this becomes cumbersome to write as all the from implementations now contain matches over all variants. This is where this crate comes in. With `composite-error`, the above errors can be specified like this:
+This is a better approach as the `PermissionDenied` error is now only encoded in one way. However, when errors get more complex, this becomes cumbersome to write as all the from implementations now contain matches over all variants. This is where this crate comes in. With `compound-error`, the above errors can be specified like this:
 
 ```rust
-use composite_error::CompositeError;
+use compound_error::CompoundError;
 
 struct PermissionDenied; // permission denied error
 struct FileNotFound; // file not found error
 struct Read; // error during reading
 
-#[derive(CompositeError)]
+#[derive(CompoundError)]
 enum OpenError {
 	FileNotFound(FileNotFound),
 	PermissionDenied(PermissionDenied)
 }
 
-#[derive(CompositeError)]
+#[derive(CompoundError)]
 enum CreateError {
 	PermissionDenied(PermissionDenied)
 }
 
-#[derive(CompositeError)]
+#[derive(CompoundError)]
 enum OpenOrCreateError {
-	#[from(OpenError)]
+	#[compound_error( inline_from(OpenError) )]
 	FileNotFound(FileNotFound),
 	
-	#[from(OpenError, CreateError)]
+	#[compound_error( inline_from(OpenError, CreateError) )]
 	PermissionDenied(PermissionDenied),
 	
 	Read(Read)
@@ -127,15 +127,15 @@ enum OpenOrCreateError {
 
 ## Why oh why yet another error utility for Rust?
 
-There is a reason! Most other error handling crates manage building a hierarchy of errors while `composite-error` tries to keep the error hierarchy flat, which makes error types simpler. Also, `composite-error` is kept as slim as possible to allow an easy start. That's the reason `composite-error` even exists; making things easier!
+There is a reason! Most other error handling crates manage building a hierarchy of errors while `compound-error` tries to keep the error hierarchy flat, which makes error types simpler. Also, `compound-error` is kept as slim as possible to allow an easy start. That's the reason `compound-error` even exists; making things easier!
 
-### What alternatives are there and why is `composite_error` better?
+### What alternatives are there and why is `compound-error` better?
 
-- [error-chain] - While being powerful, it is kind of hard to use when first getting started with it. Also, its syntax does not embrace Rust. It introduces some function-like macros defining their own syntax. `composite-error` limits itself to derive macros and derive macro helper attributes, the minimum needed to generate the impls for the error types.
+- [error-chain] - While being powerful, it is kind of hard to use when first getting started with it. Also, its syntax does not embrace Rust. It introduces some function-like macros defining their own syntax. `compound-error` limits itself to derive macros and derive macro helper attributes, the minimum needed to generate the impls for the error types.
 - [quick-error] - Error specification is easy but the specification of errors also happens using function-like macros introducing own syntax.
-- [failure] - It is very complex. `composite-error` tries to be as simple as possible.
+- [failure] - It is very complex. `compound-error` tries to be as simple as possible.
 
-Also, non of these crates has the declared goal to keep the error hierarchy flat. This is the main contribution of the `composite-error` crate.
+Also, non of these crates has the declared goal to keep the error hierarchy flat. This is the main contribution of the `compound-error` crate.
 
 [error-chain]: https://crates.io/crates/error-chain
 [quick-error]: https://crates.io/crates/quick-error
