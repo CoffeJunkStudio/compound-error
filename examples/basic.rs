@@ -27,11 +27,11 @@ pub enum CompositeGoo {
 
 #[derive(Debug, CompositeError)]
 pub enum CompositeBar {
-	#[from(CompositeFoo, CompositeGoo)]
+	#[compound_error( inline_from(CompositeFoo, CompositeGoo) )]
 	Foo(crate::Foo),
-	#[from(CompositeFoo)]
+	#[compound_error( inline_from(CompositeFoo) )]
 	Bar(Bar),
-	#[from(CompositeGoo)]
+	#[compound_error( inline_from(CompositeGoo) )]
 	Goo(Goo),
 	Baz(Baz)
 }
