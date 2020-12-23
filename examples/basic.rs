@@ -14,9 +14,10 @@ pub struct Baz;
 
 
 #[derive(Debug, CompoundError)]
-pub enum CompositeFoo {
+pub enum CompositeFoo<T> {
 	Foo(Foo),
-	Bar(Bar)
+	Bar(Bar),
+	Other(T)
 }
 
 #[derive(Debug, CompoundError)]
@@ -30,13 +31,14 @@ pub struct Wrap<T>(T);
 
 #[derive(Debug, CompoundError)]
 pub enum CompositeBar<T> {
-	#[compound_error( inline_from(CompositeFoo, CompositeGoo) )]
+	#[compound_error( inline_from("CompositeFoo<T>", CompositeGoo) )]
 	Foo(crate::Foo),
-	#[compound_error( inline_from(CompositeFoo) )]
+	#[compound_error( inline_from("CompositeFoo<T>") )]
 	Bar(Bar),
 	#[compound_error( inline_from(CompositeGoo) )]
 	Goo(Goo),
 	Baz(Baz),
+	#[compound_error( inline_from("CompositeFoo<T>") )]
 	Other(T),
 	Wrapper(Wrap<T>)
 }
@@ -61,7 +63,7 @@ pub fn throws_baz() -> Result<(), Baz> {
 	Err(Baz)
 }
 
-pub fn throws_composite_foo(which: u8) -> Result<(), CompositeFoo> {
+pub fn throws_composite_foo<T>(which: u8, other: T) -> Result<(), CompositeFoo<T>> {
 	if which == 0 {
 		Ok(())
 	} else if which == 1 {
@@ -93,7 +95,7 @@ pub fn throws_composite_bar<T>(which: u8, which2: u8, other: T) -> Result<(), Co
 	} else if which == 4 {
 		Ok(throws_goo()?)
 	} else if which == 5 {
-		Ok(throws_composite_foo(which2)?)
+		Ok(throws_composite_foo(which2, other)?)
 	} else if which == 6 {
 		Ok(throws_wrap(other)?)
 	} else {

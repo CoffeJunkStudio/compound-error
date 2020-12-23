@@ -46,15 +46,33 @@ impl<'attr, 'ident, I: ?Sized> AttrArgsError<'attr, 'ident, I> {
 	}
 }
 
+#[derive(Debug, Clone, Eq, PartialEq, Hash)]
+pub struct AttrArg {
+	pub path: syn::Path,
+	pub values: Vec<NestedMeta>
+}
+
+impl AttrArg {
+	pub fn new(
+		path: syn::Path,
+		values: Vec<NestedMeta>
+	) -> Self {
+		Self {
+			path,
+			values
+		}
+	}
+}
+
 pub fn attr_args<'attr, 'ident, I: ?Sized>(
 	attrs: &'attr [syn::Attribute],
 	required_key: &'ident I,
 	known_arg_keys: &[&'ident I]
-) -> Result<HashMap<&'ident I, Vec<NestedMeta>>, AttrArgsError<'attr, 'ident, I>> where
+) -> Result<HashMap<&'ident I, AttrArg>, AttrArgsError<'attr, 'ident, I>> where
 	syn::Ident: PartialEq<I>,
 	I: Hash + Eq
 {
-	let mut args: HashMap<&'ident I, Vec<NestedMeta>> = HashMap::new();
+	let mut args: HashMap<&'ident I, AttrArg> = HashMap::new();
 
 	for attr in attrs {
 		if let Some(specified_key) = attr.path.get_ident() {
@@ -118,16 +136,16 @@ pub fn attr_args<'attr, 'ident, I: ?Sized>(
 
 									match meta {
 										Meta::Path(_) => {
-											args.insert(known_arg_key, vec![ ]);
+											args.insert(known_arg_key, AttrArg::new(path, vec![ ]));
 										},
 										Meta::List(list) => {
 											let nesteds = list.nested.into_iter().collect();
-											args.insert(known_arg_key, nesteds);
+											args.insert(known_arg_key, AttrArg::new(path, nesteds));
 										},
 										Meta::NameValue(name_value) => {
-											args.insert(known_arg_key, vec![
+											args.insert(known_arg_key, AttrArg::new(path, vec![
 												NestedMeta::Lit(name_value.lit)
-											]);
+											]));
 										}
 									}
 								}
