@@ -30,7 +30,7 @@ pub fn derive_compound_error(input: TokenStream) -> TokenStream {
 		generics.split_for_impl();
 	
 	let mut from_enums: HashMap<Path, Vec<Ident>> = HashMap::new();
-	let mut from_structs: Vec<Path> = Vec::new();
+	let mut from_structs: Vec<(Path, Ident)> = Vec::new();
 	
 	match input.data {
 		Data::Enum(data) => {
@@ -74,7 +74,10 @@ pub fn derive_compound_error(input: TokenStream) -> TokenStream {
 					}
 				}
 				
-				from_structs.push(primitive_type_path);
+				// If it's not a pure generic variant, implement from
+				if !generics.type_params().any(|p| primitive_type_path.is_ident(&p.ident)) {
+					from_structs.push((primitive_type_path, variant_ident));
+				}
 			}
 		},
 		_ => {
@@ -84,9 +87,7 @@ pub fn derive_compound_error(input: TokenStream) -> TokenStream {
 	
 	let mut generated = proc_macro2::TokenStream::new();
 	
-	for from_struct in from_structs {
-		let variant_ident = from_struct.segments.last();
-		
+	for (from_struct, variant_ident) in from_structs {
 		let stream = quote! {
 			impl #generics_impl From< #from_struct > for #ident #generics_type #generics_where {
 				fn from(primitive: #from_struct) -> Self {
