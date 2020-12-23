@@ -1,5 +1,5 @@
 [package]
-name = "composite-error"
+name = "compound-error"
 version = "0.1.0"
 authors = ["Dezajno <dezajno@junk.studio>"]
 edition = "2018"

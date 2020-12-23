@@ -1,4 +1,4 @@
-use composite_error::CompositeError;
+use compound_error::CompoundError;
 
 #[derive(Debug)]
 pub struct Foo;
@@ -13,19 +13,19 @@ pub struct Bar;
 pub struct Baz;
 
 
-#[derive(Debug, CompositeError)]
+#[derive(Debug, CompoundError)]
 pub enum CompositeFoo {
 	Foo(Foo),
 	Bar(Bar)
 }
 
-#[derive(Debug, CompositeError)]
+#[derive(Debug, CompoundError)]
 pub enum CompositeGoo {
 	Foo(Foo),
 	Goo(Goo)
 }
 
-#[derive(Debug, CompositeError)]
+#[derive(Debug, CompoundError)]
 pub enum CompositeBar {
 	#[compound_error( inline_from(CompositeFoo, CompositeGoo) )]
 	Foo(crate::Foo),

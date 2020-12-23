@@ -20,8 +20,8 @@ use util::error;
 use util::attr_args;
 use util::AttrArgsError;
 
-#[proc_macro_derive(CompositeError, attributes(compound_error))]
-pub fn derive_composite_error(input: TokenStream) -> TokenStream {
+#[proc_macro_derive(CompoundError, attributes(compound_error))]
+pub fn derive_compound_error(input: TokenStream) -> TokenStream {
 	let input = parse_macro_input!(input as DeriveInput);
 	let original_input = input.clone();
 	let ident = input.ident.clone();
