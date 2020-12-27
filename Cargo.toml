@@ -1,8 +1,21 @@
 [package]
 name = "compound-error"
 version = "0.1.0"
-authors = ["Dezajno <dezajno@junk.studio>"]
+authors = ["cryptjar <cryptjar@junk.studio>", "dezajno <dezajno@junk.studio>"]
 edition = "2018"
+description = "Compound errors with flat hierarchy"
+
+repository = "https://github.com/CoffeJunkStudio/compound-error"
+readme = "README.md"
+license = "Apache-2.0"
+
+categories = ["Rust patterns"]
+keywords = ["macro", "error", "enum", "type"]
+
+
+[package.metadata.docs.rs]
+all-features = true
+
 
 [dependencies]
 syn = { version = "1.0", features = ["extra-traits"] }
