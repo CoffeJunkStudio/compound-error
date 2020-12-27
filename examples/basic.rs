@@ -30,6 +30,7 @@ pub enum CompositeGoo {
 pub struct Wrap<T>(T);
 
 #[derive(Debug, CompoundError)]
+#[compound_error( title = "Composite Bar", description = "composite bar error" )]
 pub enum CompositeBar<T: std::fmt::Debug> {
 	#[compound_error( inline_from("CompositeFoo<T>", CompositeGoo) )]
 	Foo(crate::Foo),
@@ -106,7 +107,7 @@ pub fn throws_composite_bar<T: std::fmt::Debug>(which: u8, which2: u8, other: T)
 
 fn main() {
 	if let Err(e) = throws_composite_bar(5,1,()) {
-		println!("{}", e);
+		println!("Error: {}", e);
 	}
 }
 

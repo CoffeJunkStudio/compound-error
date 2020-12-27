@@ -21,11 +21,7 @@ pub fn error(spanned: &impl syn::spanned::Spanned, message: &str) -> TokenStream
 }
 
 #[derive(Debug, Clone, Eq, PartialEq, Hash)]
-pub enum AttrArgsError<'attr, 'ident, I: ?Sized> {
-	KeyMismatch {
-		specified: &'attr syn::Path,
-		required: &'ident I
-	},
+pub enum AttrArgsError<'attr> {
 	InvalidArg(syn::Path),
 	LitArg(syn::Lit),
 	DupliateArg(syn::Path),
@@ -33,10 +29,9 @@ pub enum AttrArgsError<'attr, 'ident, I: ?Sized> {
 	NoNestedMeta(MetaNameValue)
 }
 
-impl<'attr, 'ident, I: ?Sized> AttrArgsError<'attr, 'ident, I> {
-	pub fn explain(self) -> TokenStream where I: std::fmt::Display {
+impl<'attr> AttrArgsError<'attr> {
+	pub fn explain(self) -> TokenStream {
 		match self {
-			Self::KeyMismatch{ specified, required } => error(specified, &format!("Expected '{}'.", required)),
 			Self::InvalidArg(key) => error(&key, "Invalid argument."),
 			Self::LitArg(lit) => error(&lit, "Invalid first-level literal."),
 			Self::DupliateArg(key) => error(&key, "Duplicate argument."),
@@ -68,7 +63,7 @@ pub fn attr_args<'attr, 'ident, I: ?Sized>(
 	attrs: &'attr [syn::Attribute],
 	required_key: &'ident I,
 	known_arg_keys: &[&'ident I]
-) -> Result<HashMap<&'ident I, AttrArg>, AttrArgsError<'attr, 'ident, I>> where
+) -> Result<HashMap<&'ident I, AttrArg>, AttrArgsError<'attr>> where
 	syn::Ident: PartialEq<I>,
 	I: Hash + Eq
 {
@@ -77,16 +72,10 @@ pub fn attr_args<'attr, 'ident, I: ?Sized>(
 	for attr in attrs {
 		if let Some(specified_key) = attr.path.get_ident() {
 			if specified_key != required_key {
-				return Err(AttrArgsError::KeyMismatch { 
-					specified: &attr.path,
-					required: required_key
-				})
+				continue
 			}
 		} else {
-			return Err(AttrArgsError::KeyMismatch { 
-				specified: &attr.path,
-				required: required_key
-			})
+			continue
 		}
 		
 		match attr.parse_meta() {

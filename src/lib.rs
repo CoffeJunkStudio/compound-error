@@ -58,6 +58,47 @@ pub fn derive_compound_error(input: TokenStream) -> TokenStream {
 	let (generics_impl, generics_type, generics_where) =
 		generics.split_for_impl();
 	
+	let mut toplevel_attrs = {
+		match attr_args(&input.attrs, "compound_error", &["title", "description"]) {
+			Err(err) => return err.explain(),
+			Ok(ok) => ok
+		}	
+	};
+
+	let title_attr = toplevel_attrs.remove(&"title");
+	let title = {
+		if let Some(attr) = title_attr {
+			if attr.values.len() != 1 {
+				return error(&attr.path, "'title' takes exactly one string argument!")
+			}
+			match &attr.values[0] {
+				NestedMeta::Lit(syn::Lit::Str(lit)) => {
+					lit.value()
+				},
+				_ => return error(&attr.path, "'title' argument must be a string!")
+			}
+		} else {
+			ident.to_string()
+		}
+	};
+
+	let description_attr = toplevel_attrs.remove(&"description");
+	let description = {
+		if let Some(attr) = description_attr {
+			if attr.values.len() != 1 {
+				return error(&attr.path, "'description' takes exactly one string argument!")
+			}
+			match &attr.values[0] {
+				NestedMeta::Lit(syn::Lit::Str(lit)) => {
+					format!(" ({})", lit.value())
+				},
+				_ => return error(&attr.path, "'description' argument must be a string!")
+			}
+		} else {
+			"".into()
+		}
+	};
+	
 	let mut from_enums: HashMap<PathOrLit, Vec<Ident>> = HashMap::new();
 	let mut from_structs: Vec<(Path, Ident)> = Vec::new();
 	
@@ -86,7 +127,6 @@ pub fn derive_compound_error(input: TokenStream) -> TokenStream {
 
 				let mut args = {
 					match attr_args(&variant.attrs, "compound_error", &["inline_from", "skip_single_from"]) {
-						Err(AttrArgsError::KeyMismatch { .. }) => continue,
 						Err(err) => return err.explain(),
 						Ok(ok) => ok
 					}
@@ -169,13 +209,11 @@ pub fn derive_compound_error(input: TokenStream) -> TokenStream {
 		generated.extend(stream);
 	}
 
-	let name = ident.to_string();
-
 	generated.extend( quote! {
 		#[automatically_derived]
 		impl #generics_impl std::fmt::Display for #ident #generics_type #generics_where {
 			fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-				write!(f, #name) // TODO
+				write!(f, "{}{}", #title, #description) // TODO
 			}
 		}
 
