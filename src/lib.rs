@@ -69,6 +69,60 @@ impl quote::ToTokens for PathOrLit {
 	}
 }
 
+/// Implement `CompoundError` functionality for the target type.
+/// 
+/// If the target is an enum, `From` is implemented for each variant.
+/// Additionally, variants can be annotated with
+/// `#[compound_error( inline_from(X) )]`
+/// to specify that an "inlining from `X`" should be implemented. In addition
+/// to the `From` impls, by default also `std::error::Error` and
+/// `std::fmt::Display` are implemented for the target type. If the target type
+/// is a struct, no `From` impls, but only `std::error::Error` and
+/// `std::fmt::Display` impls are generated.
+/// 
+/// The generation of the `Error` and `Display` impls can by suppressed by
+/// specifying `#[compound_error( skip_error )]` and
+/// `#[compound_error( skip_display )]` on the target type.
+/// 
+/// If the target type is an enum, all variants must take exactly one argument.
+/// By default, this argument must implement `std::error::Error`. This can be
+/// circumvented by either specifying the `skip_error` attribute on the target
+/// type or by specifying the `no_source` attribute on the respective variant.
+/// `no_source` causes `None` to be returned by the implementation of
+/// `std::error::Error::source()` on the target type for the respective enum
+/// variant.
+/// 
+/// # Attributes
+/// 
+/// Attributes are specified in the following form:
+/// 
+/// ```
+/// #[compound_error( attr1, attr2, attr3, ... )]
+/// #[compound_error( attr4, attr5, ... )]
+/// <ELEMENT>
+/// ```
+/// 
+/// `<ELEMENT>` can be the target type or an enum variant. The following
+/// attributes are available:
+/// 
+/// On the target type:
+/// * `title = "<title>"`: Set the title of this error to `"<title>"`. This is
+///   relevant for the automatic `Display` implementation on the target type.
+/// * `description = "<description>"`: Set the description of this error to
+///   `"<description>"`. This is relevant for the automatic `Display`
+///   implementation on the target type.
+/// * `skip_display`: Skip the automatic implementation of `std::fmt::Display`
+///   on the target type.
+/// * `skip_error`: Skip the automatic implementation of `std::error::Error` on
+///   the target type.
+/// 
+/// On each enum variant:
+/// * `inline_from(A,B,C,...)`: Inline the Errors `A`, `B`, `C`, ... in the
+///   target type.
+/// * `no_source`: Return `None` from `<Self as std::error::Error>::source()`
+///   for this enum variant. This lifts the requirement that `std::error::Error`
+///   is implemented for the argument of this variant.
+/// 
 #[proc_macro_derive(CompoundError, attributes(compound_error))]
 pub fn derive_compound_error(input: TokenStream) -> TokenStream {
 	let input = parse_macro_input!(input as DeriveInput);
