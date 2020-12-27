@@ -85,7 +85,7 @@ pub fn derive_compound_error(input: TokenStream) -> TokenStream {
 				};
 
 				let mut args = {
-					match attr_args(&variant.attrs, "compound_error", &["inline_from"]) {
+					match attr_args(&variant.attrs, "compound_error", &["inline_from", "skip_single_from"]) {
 						Err(AttrArgsError::KeyMismatch { .. }) => continue,
 						Err(err) => return err.explain(),
 						Ok(ok) => ok
@@ -111,9 +111,16 @@ pub fn derive_compound_error(input: TokenStream) -> TokenStream {
 						}
 					}
 				}
+
+				let skip_single_from = args.remove(&"skip_single_from");
+				if let Some(skip) = &skip_single_from {
+					if !skip.values.is_empty() {
+						return error(&skip.path, "'skip_single_from' attribute must be a path!")
+					}
+				}
 				
 				// If it's not a pure generic variant, implement from
-				if !generics.type_params().any(|p| primitive_type_path.is_ident(&p.ident)) {
+				if skip_single_from.is_none() && !generics.type_params().any(|p| primitive_type_path.is_ident(&p.ident)) {
 					from_structs.push((primitive_type_path, variant_ident));
 				}
 			}
