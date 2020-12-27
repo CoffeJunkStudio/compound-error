@@ -168,6 +168,21 @@ pub fn derive_compound_error(input: TokenStream) -> TokenStream {
 		
 		generated.extend(stream);
 	}
+
+	let name = ident.to_string();
+
+	generated.extend( quote! {
+		#[automatically_derived]
+		impl #generics_impl std::fmt::Display for #ident #generics_type #generics_where {
+			fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+				write!(f, #name) // TODO
+			}
+		}
+
+		impl #generics_impl std::error::Error for #ident #generics_type #generics_where {
+
+		}
+	} );
 	
 	generated.into()
 }

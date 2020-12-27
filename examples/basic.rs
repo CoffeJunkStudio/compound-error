@@ -14,7 +14,7 @@ pub struct Baz;
 
 
 #[derive(Debug, CompoundError)]
-pub enum CompositeFoo<T> {
+pub enum CompositeFoo<T: std::fmt::Debug> {
 	Foo(Foo),
 	Bar(Bar),
 	Other(T)
@@ -30,7 +30,7 @@ pub enum CompositeGoo {
 pub struct Wrap<T>(T);
 
 #[derive(Debug, CompoundError)]
-pub enum CompositeBar<T> {
+pub enum CompositeBar<T: std::fmt::Debug> {
 	#[compound_error( inline_from("CompositeFoo<T>", CompositeGoo) )]
 	Foo(crate::Foo),
 	#[compound_error( inline_from("CompositeFoo<T>") )]
@@ -63,7 +63,7 @@ pub fn throws_baz() -> Result<(), Baz> {
 	Err(Baz)
 }
 
-pub fn throws_composite_foo<T>(which: u8, other: T) -> Result<(), CompositeFoo<T>> {
+pub fn throws_composite_foo<T: std::fmt::Debug>(which: u8, other: T) -> Result<(), CompositeFoo<T>> {
 	if which == 0 {
 		Ok(())
 	} else if which == 1 {
@@ -83,7 +83,7 @@ pub fn throws_composite_goo(which: u8) -> Result<(), CompositeGoo> {
 	}
 }
 
-pub fn throws_composite_bar<T>(which: u8, which2: u8, other: T) -> Result<(), CompositeBar<T>> {
+pub fn throws_composite_bar<T: std::fmt::Debug>(which: u8, which2: u8, other: T) -> Result<(), CompositeBar<T>> {
 	if which == 0 {
 		Ok(())
 	} else if which == 1 {
@@ -105,7 +105,9 @@ pub fn throws_composite_bar<T>(which: u8, which2: u8, other: T) -> Result<(), Co
 
 
 fn main() {
-	throws_composite_bar(5,1,()).unwrap();
+	if let Err(e) = throws_composite_bar(5,1,()) {
+		println!("{}", e);
+	}
 }
 
 
