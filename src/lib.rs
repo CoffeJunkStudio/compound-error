@@ -174,6 +174,7 @@ pub fn derive_compound_error(input: TokenStream) -> TokenStream {
 	let skip_display = flag!(&toplevel_args, &"skip_display");
 	let skip_error = flag!(&toplevel_args, &"skip_error");
 	
+	#[allow(unused_assignments)]
 	let mut err_source = proc_macro2::TokenStream::new();
 	let mut from_enums: HashMap<PathOrLit, Vec<Ident>> = HashMap::new();
 	let mut from_structs: Vec<(Path, Ident)> = Vec::new();
