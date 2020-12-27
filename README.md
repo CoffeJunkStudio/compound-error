@@ -134,11 +134,13 @@ There is a reason! Most other error handling crates manage building a hierarchy 
 - [error-chain] - While being powerful, it is kind of hard to use when first getting started with it. Also, its syntax does not embrace Rust. It introduces some function-like macros defining their own syntax. `compound-error` limits itself to derive macros and derive macro helper attributes, the minimum needed to generate the impls for the error types.
 - [quick-error] - Error specification is easy but the specification of errors also happens using function-like macros introducing own syntax.
 - [failure] - It is very complex. `compound-error` tries to be as simple as possible.
+- [composite-error] - Does not implement `std::error::Error`. `compound-error` automatically implementes `std::error::Error` and provides means to skip that automatic implementation when needed.
 
 Also, non of these crates has the declared goal to keep the error hierarchy flat. This is the main contribution of the `compound-error` crate.
 
 [error-chain]: https://crates.io/crates/error-chain
 [quick-error]: https://crates.io/crates/quick-error
 [failure]: https://crates.io/crates/failure
+[composite-error]: https://crates.io/crates/composite-error
 
 
