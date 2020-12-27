@@ -122,6 +122,8 @@ impl quote::ToTokens for PathOrLit {
 /// * `no_source`: Return `None` from `<Self as std::error::Error>::source()`
 ///   for this enum variant. This lifts the requirement that `std::error::Error`
 ///   is implemented for the argument of this variant.
+/// * `convert_source(fn)`: Applies `fn` to the error of this variant before
+///   returing it from `<Self as std::error::Error>::source()`
 /// 
 #[proc_macro_derive(CompoundError, attributes(compound_error))]
 pub fn derive_compound_error(input: TokenStream) -> TokenStream {
@@ -205,7 +207,7 @@ pub fn derive_compound_error(input: TokenStream) -> TokenStream {
 				};
 
 				let mut args = {
-					match attr_args(&variant.attrs, "compound_error", &["inline_from", "skip_single_from", "no_source"]) {
+					match attr_args(&variant.attrs, "compound_error", &["inline_from", "skip_single_from", "no_source", "convert_source"]) {
 						Err(err) => return err.explain(),
 						Ok(ok) => ok
 					}
@@ -241,8 +243,27 @@ pub fn derive_compound_error(input: TokenStream) -> TokenStream {
 				let no_source = flag!(&args, &"no_source");
 
 				if !no_source {
+					let src_ret = {
+						if let Some(convert_source_attr) = args.remove(&"convert_source") {
+							if convert_source_attr.values.len() != 1 {
+								return crate::error(&convert_source_attr.path, "'convert_source' takes exactly one argument!")
+							}
+							
+							match &convert_source_attr.values[0] {
+								NestedMeta::Meta(Meta::Path(path)) => {
+									quote!( #path (x) )
+								},
+								_ => {
+									return crate::error(&convert_source_attr.path, "The argument of 'convert_source' must be a path!")
+								}
+							}
+						} else {
+							quote!( x )
+						}
+					};
+				
 					err_sources.extend( quote! {
-						Self::#variant_ident(x) => Some(x),
+						Self::#variant_ident(x) => Some( #src_ret ),
 					} );
 				}
 			}
