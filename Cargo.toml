@@ -9,7 +9,7 @@ repository = "https://github.com/CoffeJunkStudio/compound-error"
 readme = "README.md"
 license = "Apache-2.0"
 
-categories = ["Rust patterns"]
+categories = ["rust-patterns"]
 keywords = ["macro", "error", "enum", "type"]
 
 
