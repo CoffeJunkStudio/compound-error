@@ -127,6 +127,7 @@ pub fn derive_compound_error(input: TokenStream) -> TokenStream {
 	
 	for (from_struct, variant_ident) in from_structs {
 		let stream = quote! {
+			#[automatically_derived]
 			impl #generics_impl From< #from_struct > for #ident #generics_type #generics_where {
 				fn from(primitive: #from_struct) -> Self {
 					Self::#variant_ident( primitive )
@@ -148,6 +149,7 @@ pub fn derive_compound_error(input: TokenStream) -> TokenStream {
 		}
 		
 		let stream = quote! {
+			#[automatically_derived]
 			impl #generics_impl From< #from_enum > for #ident #generics_type #generics_where {
 				fn from(composite: #from_enum) -> Self {
 					match composite {
