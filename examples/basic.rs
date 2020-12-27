@@ -1,15 +1,15 @@
 use compound_error::CompoundError;
 
-#[derive(Debug)]
+#[derive(Debug, CompoundError)]
 pub struct Foo;
 
-#[derive(Debug)]
+#[derive(Debug, CompoundError)]
 pub struct Goo;
 
-#[derive(Debug)]
+#[derive(Debug, CompoundError)]
 pub struct Bar;
 
-#[derive(Debug)]
+#[derive(Debug, CompoundError)]
 pub struct Baz;
 
 
@@ -17,6 +17,8 @@ pub struct Baz;
 pub enum CompositeFoo<T: std::fmt::Debug> {
 	Foo(Foo),
 	Bar(Bar),
+
+	#[compound_error( no_source )]
 	Other(T)
 }
 
@@ -26,12 +28,12 @@ pub enum CompositeGoo {
 	Goo(Goo)
 }
 
-#[derive(Debug)]
-pub struct Wrap<T>(T);
+#[derive(Debug, CompoundError)]
+pub struct Wrap<T: 'static + std::fmt::Debug>(T);
 
 #[derive(Debug, CompoundError)]
 #[compound_error( title = "Composite Bar", description = "composite bar error" )]
-pub enum CompositeBar<T: std::fmt::Debug> {
+pub enum CompositeBar<T: 'static + std::fmt::Debug + std::error::Error> {
 	#[compound_error( inline_from("CompositeFoo<T>", CompositeGoo) )]
 	Foo(crate::Foo),
 	#[compound_error( inline_from("CompositeFoo<T>") )]
@@ -44,7 +46,7 @@ pub enum CompositeBar<T: std::fmt::Debug> {
 	Wrapper(Wrap<T>)
 }
 
-pub fn throws_wrap<T>(err: T) -> Result<(), Wrap<T>> {
+pub fn throws_wrap<T: 'static + std::fmt::Debug>(err: T) -> Result<(), Wrap<T>> {
 	Err(Wrap(err))
 }
 
@@ -64,7 +66,7 @@ pub fn throws_baz() -> Result<(), Baz> {
 	Err(Baz)
 }
 
-pub fn throws_composite_foo<T: std::fmt::Debug>(which: u8, other: T) -> Result<(), CompositeFoo<T>> {
+pub fn throws_composite_foo<T: std::fmt::Debug>(which: u8, _: T) -> Result<(), CompositeFoo<T>> {
 	if which == 0 {
 		Ok(())
 	} else if which == 1 {
@@ -84,7 +86,7 @@ pub fn throws_composite_goo(which: u8) -> Result<(), CompositeGoo> {
 	}
 }
 
-pub fn throws_composite_bar<T: std::fmt::Debug>(which: u8, which2: u8, other: T) -> Result<(), CompositeBar<T>> {
+pub fn throws_composite_bar<T: std::fmt::Debug + std::error::Error>(which: u8, which2: u8, other: T) -> Result<(), CompositeBar<T>> {
 	if which == 0 {
 		Ok(())
 	} else if which == 1 {
@@ -106,7 +108,7 @@ pub fn throws_composite_bar<T: std::fmt::Debug>(which: u8, which2: u8, other: T)
 
 
 fn main() {
-	if let Err(e) = throws_composite_bar(5,1,()) {
+	if let Err(e) = throws_composite_bar(5,1,Foo) {
 		println!("Error: {}", e);
 	}
 }

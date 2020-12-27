@@ -152,3 +152,15 @@ pub fn attr_args<'attr, 'ident, I: ?Sized>(
 	Ok(args)
 }
 
+pub fn flag<'a, I: ?Sized + Eq + Hash>(args: &'a HashMap<&I, AttrArg>, ident: &I) -> Result<bool, &'a syn::Path> {
+	if let Some(skip) = args.get(ident) {
+		if !skip.values.is_empty() {
+			return Err(&skip.path)
+		}
+		
+		Ok(true)
+	} else {
+		Ok(false)
+	}
+}
+
