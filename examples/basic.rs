@@ -16,38 +16,37 @@ pub struct Bar;
 #[derive(Debug, CompoundError)]
 pub struct Baz;
 
-
 #[derive(Debug, CompoundError)]
 pub enum CompoundFoo<T: std::fmt::Debug> {
 	Foo(Foo),
 	Bar(Bar),
 
-	#[compound_error( no_source )]
-	Other(T)
+	#[compound_error(no_source)]
+	Other(T),
 }
 
 #[derive(Debug, CompoundError)]
 pub enum CompoundGoo {
 	Foo(Foo),
-	Goo(Goo)
+	Goo(Goo),
 }
 
 #[derive(Debug, CompoundError)]
 pub struct Wrap<T: 'static + std::fmt::Debug>(T);
 
 #[derive(Debug, CompoundError)]
-#[compound_error( title = "Compound Bar", description = "compound bar error" )]
+#[compound_error(title = "Compound Bar", description = "compound bar error")]
 pub enum CompoundBar<T: 'static + std::fmt::Debug + std::error::Error> {
-	#[compound_error( inline_from("CompoundFoo<T>", CompoundGoo) )]
+	#[compound_error(inline_from("CompoundFoo<T>", CompoundGoo))]
 	Foo(crate::Foo),
-	#[compound_error( inline_from("CompoundFoo<T>") )]
+	#[compound_error(inline_from("CompoundFoo<T>"))]
 	Bar(Bar),
-	#[compound_error( inline_from(CompoundGoo) )]
+	#[compound_error(inline_from(CompoundGoo))]
 	Goo(Goo),
 	Baz(Baz),
-	#[compound_error( inline_from("CompoundFoo<T>") )]
+	#[compound_error(inline_from("CompoundFoo<T>"))]
 	Other(T),
-	Wrapper(Wrap<T>)
+	Wrapper(Wrap<T>),
 }
 
 pub fn throws_wrap<T: 'static + std::fmt::Debug>(err: T) -> Result<(), Wrap<T>> {
@@ -90,12 +89,16 @@ pub fn throws_compound_goo(which: u8) -> Result<(), CompoundGoo> {
 	}
 }
 
-pub fn throws_compound_bar<T: std::fmt::Debug + std::error::Error>(which: u8, which2: u8, other: T) -> Result<(), CompoundBar<T>> {
+pub fn throws_compound_bar<T: std::fmt::Debug + std::error::Error>(
+	which: u8,
+	which2: u8,
+	other: T,
+) -> Result<(), CompoundBar<T>> {
 	if which == 0 {
 		Ok(())
 	} else if which == 1 {
 		Err(CompoundBar::Other(other))
-		//Ok(throws_foo()?)
+	//Ok(throws_foo()?)
 	} else if which == 2 {
 		Ok(throws_bar()?)
 	} else if which == 3 {
@@ -111,11 +114,8 @@ pub fn throws_compound_bar<T: std::fmt::Debug + std::error::Error>(which: u8, wh
 	}
 }
 
-
 fn main() {
-	if let Err(e) = throws_compound_bar(5,1,Foo) {
+	if let Err(e) = throws_compound_bar(5, 1, Foo) {
 		println!("Error: {}", e);
 	}
 }
-
-
