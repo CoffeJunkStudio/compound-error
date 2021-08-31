@@ -180,13 +180,19 @@ pub fn derive_compound_error(input: TokenStream) -> TokenStream {
 	let mut err_source = proc_macro2::TokenStream::new();
 	let mut from_enums: HashMap<PathOrLit, Vec<Ident>> = HashMap::new();
 	let mut from_structs: Vec<(Path, Ident)> = Vec::new();
+
+	#[allow(unused_assignments)]
+	let mut display = proc_macro2::TokenStream::new();
 	
 	match input.data {
 		Data::Enum(data) => {
 			let mut err_sources = proc_macro2::TokenStream::new();
 
+			let mut display_cases = Vec::new();
+
 			for variant in data.variants {
 				let variant_ident = variant.ident;
+				let variant_ident_str = variant_ident.to_string();
 				let field = {
 					match variant.fields {
 						Fields::Unnamed(fields) if fields.unnamed.len() == 1 => {
@@ -240,6 +246,8 @@ pub fn derive_compound_error(input: TokenStream) -> TokenStream {
 					from_structs.push((primitive_type_path, variant_ident.clone()));
 				}
 
+				let variant_display;
+
 				let no_source = flag!(&args, &"no_source");
 
 				if !no_source {
@@ -261,12 +269,35 @@ pub fn derive_compound_error(input: TokenStream) -> TokenStream {
 							quote!( x )
 						}
 					};
+
+					variant_display = quote!(x);
 				
 					err_sources.extend( quote! {
 						Self::#variant_ident(x) => Some( #src_ret ),
 					} );
+				} else {
+					variant_display = quote!(#variant_ident_str);
 				}
+
+				display_cases.push(quote! {
+					Self::#variant_ident (x) => {
+						writeln!(f, ":")?;
+						write!(f, "  └ {}", #variant_display)?;
+					}
+				});
 			}
+
+			display_cases.push(quote! {
+				_ => {}
+			});
+
+			display = quote! {
+				write!(f, "{}{}", #title, #description)?;
+				match self {
+					#(#display_cases),*
+				}
+				Ok(())
+			};
 
 			err_source = quote! {
 				match self {
@@ -276,6 +307,10 @@ pub fn derive_compound_error(input: TokenStream) -> TokenStream {
 			};
 		},
 		Data::Struct(_) => {
+			display = quote! {
+				write!(f, "{}{}", #title, #description)
+			};
+
 			err_source = quote!( None );
 		}
 		_ => {
@@ -327,7 +362,7 @@ pub fn derive_compound_error(input: TokenStream) -> TokenStream {
 			#[automatically_derived]
 			impl #generics_impl std::fmt::Display for #ident #generics_type #generics_where {
 				fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-					write!(f, "{}{}", #title, #description) // TODO
+					#display
 				}
 			}
 		} );
