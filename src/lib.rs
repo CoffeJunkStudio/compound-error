@@ -95,7 +95,7 @@ impl quote::ToTokens for PathOrLit {
 ///
 /// Attributes are specified in the following form:
 ///
-/// ```
+/// ```text
 /// #[compound_error( attr1, attr2, attr3, ... )]
 /// #[compound_error( attr4, attr5, ... )]
 /// <ELEMENT>
