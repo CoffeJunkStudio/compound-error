@@ -345,7 +345,7 @@ pub fn derive_compound_error(input: TokenStream) -> TokenStream {
 			err_source = quote! {
 				match self {
 					#err_sources
-					_ => None
+					_ => ::core::option::Option::None
 				}
 			};
 		}
@@ -366,7 +366,7 @@ pub fn derive_compound_error(input: TokenStream) -> TokenStream {
 	for (from_struct, variant_ident) in from_structs {
 		let stream = quote! {
 			#[automatically_derived]
-			impl #generics_impl From< #from_struct > for #ident #generics_type #generics_where {
+			impl #generics_impl ::core::convert::From< #from_struct > for #ident #generics_type #generics_where {
 				fn from(primitive: #from_struct) -> Self {
 					Self::#variant_ident( primitive )
 				}
@@ -388,7 +388,7 @@ pub fn derive_compound_error(input: TokenStream) -> TokenStream {
 
 		let stream = quote! {
 			#[automatically_derived]
-			impl #generics_impl From< #from_enum > for #ident #generics_type #generics_where {
+			impl #generics_impl ::core::convert::From< #from_enum > for #ident #generics_type #generics_where {
 				fn from(composite: #from_enum) -> Self {
 					match composite {
 						#cases
@@ -403,19 +403,20 @@ pub fn derive_compound_error(input: TokenStream) -> TokenStream {
 	if !skip_display {
 		generated.extend(quote! {
 			#[automatically_derived]
-			impl #generics_impl std::fmt::Display for #ident #generics_type #generics_where {
-				fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+			impl #generics_impl ::core::fmt::Display for #ident #generics_type #generics_where {
+				fn fmt(&self, f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
 					#display
 				}
 			}
 		});
 	}
 
+	// BTW: requires `std`
 	if !skip_error {
 		generated.extend(quote! {
 			#[automatically_derived]
-			impl #generics_impl std::error::Error for #ident #generics_type #generics_where {
-				fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
+			impl #generics_impl ::std::error::Error for #ident #generics_type #generics_where {
+				fn source(&self) -> ::std::option::Option<&(dyn ::std::error::Error + 'static)> {
 					#err_source
 				}
 			}
