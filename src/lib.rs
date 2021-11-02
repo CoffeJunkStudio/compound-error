@@ -15,13 +15,12 @@ use syn::Meta;
 use syn::NestedMeta;
 use syn::Path;
 use syn::Type;
-
 use util::attr_args;
 use util::error;
 use util::flag;
 
 macro_rules! try_compile {
-	( $what:expr, | $err:ident | $ret:expr ) => {{
+	($what:expr, | $err:ident | $ret:expr) => {{
 		match $what {
 			Err($err) => return $ret,
 			Ok(ok) => ok,
@@ -30,11 +29,10 @@ macro_rules! try_compile {
 }
 
 macro_rules! flag {
-	( $args:expr, $arg:expr ) => {
-		try_compile!(flag($args, $arg), |path| error(
-			path,
-			&format!("'{}' attribute takes no arguments!", $arg)
-		));
+	($args:expr, $arg:expr) => {
+		try_compile!(flag($args, $arg), |path| {
+			error(path, &format!("'{}' attribute takes no arguments!", $arg))
+		})
 	};
 }
 
@@ -168,7 +166,7 @@ pub fn derive_compound_error(input: TokenStream) -> TokenStream {
 			match &attr.values[0] {
 				NestedMeta::Lit(syn::Lit::Str(lit)) => {
 					format!(" ({})", lit.value())
-				}
+				},
 				_ => return error(&attr.path, "'description' argument must be a string!"),
 			}
 		} else {
@@ -200,7 +198,7 @@ pub fn derive_compound_error(input: TokenStream) -> TokenStream {
 					match variant.fields {
 						Fields::Unnamed(fields) if fields.unnamed.len() == 1 => {
 							fields.unnamed[0].clone()
-						}
+						},
 						_ => {
 							return error(
 								&original_input,
@@ -209,7 +207,7 @@ pub fn derive_compound_error(input: TokenStream) -> TokenStream {
 									variant_ident
 								),
 							)
-						}
+						},
 					}
 				};
 
@@ -217,7 +215,14 @@ pub fn derive_compound_error(input: TokenStream) -> TokenStream {
 					if let Type::Path(ty) = field.ty {
 						ty.path
 					} else {
-						return error(&original_input, &format!("Variant '{}' must specify exactly one unnamed field referencing a type!", variant_ident));
+						return error(
+							&original_input,
+							&format!(
+								"Variant '{}' must specify exactly one unnamed field referencing \
+								 a type!",
+								variant_ident
+							),
+						);
 					}
 				};
 
@@ -245,29 +250,30 @@ pub fn derive_compound_error(input: TokenStream) -> TokenStream {
 									.entry(PathOrLit::Path(path))
 									.or_default()
 									.push(variant_ident.clone());
-							}
+							},
 							NestedMeta::Lit(syn::Lit::Str(lit)) => {
-								let parsed_ty =
-									{
-										match lit.parse() {
-											Err(_) => return error(
+								let parsed_ty = {
+									match lit.parse() {
+										Err(_) => {
+											return error(
 												&from_attr.path,
 												"'inline_from' attribute must be a list of types!",
-											),
-											Ok(ok) => ok,
-										}
-									};
+											)
+										},
+										Ok(ok) => ok,
+									}
+								};
 								from_enums
 									.entry(PathOrLit::Lit(parsed_ty))
 									.or_default()
 									.push(variant_ident.clone());
-							}
+							},
 							_ => {
 								return error(
 									&from_attr.path,
 									"'inline_from' attribute must be a list of types!",
 								)
-							}
+							},
 						}
 					}
 				}
@@ -300,13 +306,13 @@ pub fn derive_compound_error(input: TokenStream) -> TokenStream {
 							match &convert_source_attr.values[0] {
 								NestedMeta::Meta(Meta::Path(path)) => {
 									quote!( #path (x) )
-								}
+								},
 								_ => {
 									return crate::error(
 										&convert_source_attr.path,
 										"The argument of 'convert_source' must be a path!",
 									)
-								}
+								},
 							}
 						} else {
 							quote!(x)
@@ -348,17 +354,17 @@ pub fn derive_compound_error(input: TokenStream) -> TokenStream {
 					_ => ::core::option::Option::None
 				}
 			};
-		}
+		},
 		Data::Struct(_) => {
 			display = quote! {
 				write!(f, "{}{}", #title, #description)
 			};
 
 			err_source = quote!(None);
-		}
+		},
 		_ => {
 			return error(&original_input, "Can only be used on enums!");
-		}
+		},
 	}
 
 	let mut generated = proc_macro2::TokenStream::new();

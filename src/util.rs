@@ -2,9 +2,7 @@ use std::collections::HashMap;
 use std::hash::Hash;
 
 use proc_macro::TokenStream;
-
 use quote::quote_spanned;
-
 use syn::Meta;
 use syn::MetaList;
 use syn::MetaNameValue;
@@ -37,7 +35,7 @@ impl<'attr> AttrArgsError<'attr> {
 			Self::NoMeta(attr) => error(attr, "Must be of 'meta' type."),
 			Self::NoNestedMeta(mnv) => {
 				error(&mnv, "Invalid name-value pair. Expected path or list.")
-			}
+			},
 		}
 	}
 }
@@ -50,7 +48,10 @@ pub struct AttrArg {
 
 impl AttrArg {
 	pub fn new(path: syn::Path, values: Vec<NestedMeta>) -> Self {
-		Self { path, values }
+		Self {
+			path,
+			values,
+		}
 	}
 }
 
@@ -80,8 +81,10 @@ where
 					Meta::NameValue(mnv) => return Err(AttrArgsError::NoNestedMeta(mnv)),
 					Meta::Path(_) => {
 						// no arguments
-					}
-					Meta::List(MetaList { nested, .. }) => {
+					},
+					Meta::List(MetaList {
+						nested, ..
+					}) => {
 						for nested_arg in nested {
 							match nested_arg {
 								NestedMeta::Lit(lit) => return Err(AttrArgsError::LitArg(lit)),
@@ -117,11 +120,11 @@ where
 									match meta {
 										Meta::Path(_) => {
 											args.insert(known_arg_key, AttrArg::new(path, vec![]));
-										}
+										},
 										Meta::List(list) => {
 											let nesteds = list.nested.into_iter().collect();
 											args.insert(known_arg_key, AttrArg::new(path, nesteds));
-										}
+										},
 										Meta::NameValue(name_value) => {
 											args.insert(
 												known_arg_key,
@@ -130,14 +133,14 @@ where
 													vec![NestedMeta::Lit(name_value.lit)],
 												),
 											);
-										}
+										},
 									}
-								}
+								},
 							}
 						}
-					}
+					},
 				}
-			}
+			},
 			_ => return Err(AttrArgsError::NoMeta(attr)),
 		}
 	}
