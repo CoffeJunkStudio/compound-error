@@ -112,6 +112,8 @@ impl quote::ToTokens for PathOrLit {
 ///   on the target type.
 /// * `skip_error`: Skip the automatic implementation of `std::error::Error` on
 ///   the target type.
+/// * `transparent`: forward the source and Display methods through to all
+///   underlying errors without adding an additional message.
 ///
 /// On each enum variant:
 /// * `inline_from(A,B,C,...)`: Inline the Errors `A`, `B`, `C`, ... in the
@@ -121,6 +123,8 @@ impl quote::ToTokens for PathOrLit {
 ///   is implemented for the argument of this variant.
 /// * `convert_source(fn)`: Applies `fn` to the error of this variant before
 ///   returing it from `<Self as std::error::Error>::source()`
+/// * `transparent`: forward the source and Display methods through to the
+///   argument of this variant without adding an additional message.
 ///
 #[proc_macro_derive(CompoundError, attributes(compound_error))]
 pub fn derive_compound_error(input: TokenStream) -> TokenStream {
@@ -134,7 +138,13 @@ pub fn derive_compound_error(input: TokenStream) -> TokenStream {
 		attr_args(
 			&input.attrs,
 			"compound_error",
-			&["title", "description", "skip_display", "skip_error"]
+			&[
+				"title",
+				"description",
+				"skip_display",
+				"skip_error",
+				"transparent"
+			]
 		),
 		|err| err.explain()
 	);
@@ -187,6 +197,8 @@ pub fn derive_compound_error(input: TokenStream) -> TokenStream {
 
 	match input.data {
 		Data::Enum(data) => {
+			let transparent_enum = flag!(&toplevel_args, &"transparent");
+
 			let mut err_sources = proc_macro2::TokenStream::new();
 
 			let mut display_cases = Vec::new();
@@ -235,6 +247,7 @@ pub fn derive_compound_error(input: TokenStream) -> TokenStream {
 							"skip_single_from",
 							"no_source",
 							"convert_source",
+							"transparent",
 						],
 					) {
 						Err(err) => return err.explain(),
@@ -279,6 +292,7 @@ pub fn derive_compound_error(input: TokenStream) -> TokenStream {
 				}
 
 				let skip_single_from = flag!(&args, &"skip_single_from");
+				let transparent = flag!(&args, &"transparent") || transparent_enum;
 
 				// If it's not a pure generic variant, implement from
 				if !skip_single_from
@@ -321,19 +335,33 @@ pub fn derive_compound_error(input: TokenStream) -> TokenStream {
 
 					variant_display = quote!(x);
 
-					err_sources.extend(quote! {
-						Self::#variant_ident(x) => Some( #src_ret ),
-					});
+					if transparent {
+						err_sources.extend(quote! {
+							Self::#variant_ident(x) => std::error::Error::source(x),
+						});
+					} else {
+						err_sources.extend(quote! {
+							Self::#variant_ident(x) => Some( #src_ret ),
+						});
+					}
 				} else {
 					variant_display = quote!(#variant_ident_str);
 				}
 
-				display_cases.push(quote! {
-					Self::#variant_ident (x) => {
-						writeln!(f, ":")?;
-						write!(f, "  └ {}", #variant_display)?;
-					}
-				});
+				if transparent {
+					display_cases.push(quote! {
+						Self::#variant_ident (x) => {
+							std::fmt::Display::fmt(x, f)?;
+						}
+					});
+				} else {
+					display_cases.push(quote! {
+						Self::#variant_ident (x) => {
+							writeln!(f, "{}{}:", #title, #description)?;
+							write!(f, "  └ {}", #variant_display)?;
+						}
+					});
+				}
 			}
 
 			display_cases.push(quote! {
@@ -341,7 +369,6 @@ pub fn derive_compound_error(input: TokenStream) -> TokenStream {
 			});
 
 			display = quote! {
-				write!(f, "{}{}", #title, #description)?;
 				match self {
 					#(#display_cases),*
 				}
