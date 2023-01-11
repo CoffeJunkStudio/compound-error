@@ -1,6 +1,6 @@
 [package]
 name = "compound-error"
-version = "0.1.5-alpha"
+version = "0.1.5"
 authors = ["cryptjar <cryptjar@junk.studio>", "dezajno <dezajno@junk.studio>"]
 edition = "2018"
 description = "Compound errors with flat hierarchy"
